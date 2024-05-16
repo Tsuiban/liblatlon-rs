@@ -1,9 +1,9 @@
 use std::f64::consts::PI;
 
-const R: f64 = 3443.9308855;
+const RADIUS_OF_EARTH_NAUTICAL_MILES: f64 = 3443.9308855;
 
-pub const NM_2_METERS: f64 = 1852.0;
-pub const NM_2_FEET: f64 = 6076.12;
+pub const NAUTICAL_MILES_2_METERS: f64 = 1852.0;
+pub const NAUTICAL_MILES_2_FEET: f64 = 6076.12;
 
 #[derive(Debug, Clone)]
 
@@ -49,9 +49,14 @@ impl Position {
             longitude: 0.0,
         }
     }
-    
+
     pub fn ne(&self, other: &Position) -> bool {
         self.latitude != other.latitude || self.longitude != other.longitude
+    }
+
+    pub fn eq(&self, other: &Position, tolerance: f64) -> bool {
+        (self.latitude - other.latitude).abs() < tolerance
+            && (self.longitude - other.longitude).abs() < tolerance
     }
 
     pub fn from_degrees_decimal_minutes(
@@ -149,7 +154,7 @@ impl Position {
         let a = (delta_phi_sin * delta_phi_sin)
             + phi_1.cos() * phi_2.cos() * (delta_lambda_sin * delta_lambda_sin);
         let c = 2.0 * (a.sqrt()).atan2((1.0 - a).sqrt());
-        let d = R * c;
+        let d = RADIUS_OF_EARTH_NAUTICAL_MILES * c;
         d
     }
 
@@ -196,7 +201,7 @@ impl Position {
         let phi_1 = self.latitude.to_radians();
         let lambda_1 = self.longitude.to_radians();
         let theta = bearing.to_radians();
-        let omega = R / distance;
+        let omega = RADIUS_OF_EARTH_NAUTICAL_MILES / distance;
 
         let phi_2 = phi_1.sin() * theta.cos() + phi_1.cos() * theta.sin() * omega.cos();
         let lambda_2 = lambda_1
