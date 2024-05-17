@@ -83,7 +83,7 @@ impl Position {
         }
     }
 
-    pub fn from_hms(
+    pub fn from_dms(
         latitude_degrees: i8,
         latitude_minutes: u8,
         latitude_seconds: u8,
@@ -292,7 +292,7 @@ mod tests {
 
     #[test]
     fn test03() {
-        let position = Position::from_hms(123, 45, 15, -100, 30, 55);
+        let position = Position::from_dms(123, 45, 15, -100, 30, 55);
         println!("{:?}", position);
         assert!((position.latitude - 123.75 - 15.0 / 3600.0).abs() < 0.1);
         assert!((position.longitude - (-100.5 + 55.0 / 3600.0)).abs() < 0.1);
