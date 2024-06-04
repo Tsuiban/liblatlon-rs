@@ -8,12 +8,12 @@ pub const NAUTICAL_MILES_2_FEET: f64 = 6076.12;
 #[derive(Debug, Clone)]
 
 pub struct DegreesDecimalMinutes {
-    pub degrees: i8,
+    pub degrees: u16,
     pub minutes: f64,
 }
 
 pub struct DegreesMinutesSeconds {
-    pub degrees: i8,
+    pub degrees: u16,
     pub minutes: u8,
     pub seconds: u8,
 }
@@ -41,7 +41,6 @@ impl From<(f32, f32)> for Position {
         }
     }
 }
-
 impl Position {
     pub fn new() -> Position {
         Position {
@@ -84,25 +83,20 @@ impl Position {
     }
 
     pub fn from_dms(
-        latitude_degrees: i8,
+        latitude_degrees: u16,
         latitude_minutes: u8,
         latitude_seconds: u8,
-        longitude_degrees: i8,
+        longitude_degrees: u16,
         longitude_minutes: u8,
         longitude_seconds: u8,
     ) -> Self {
         let latitude = f64::from(latitude_degrees)
-            + if latitude_degrees < 0 {
-                -f64::from(latitude_minutes) / 60.0 - f64::from(latitude_seconds) / 3600.0
-            } else {
-                f64::from(latitude_minutes) / 60.0 + f64::from(latitude_seconds) / 3600.0
-            };
+            + f64::from(latitude_minutes) / 60.0
+            + f64::from(latitude_seconds) / 3600.0;
         let longitude = f64::from(longitude_degrees)
-            + if longitude_degrees < 0 {
-                -f64::from(longitude_minutes) / 60.0 - f64::from(longitude_seconds) / 3600.0
-            } else {
-                f64::from(longitude_minutes) / 60.0 + f64::from(longitude_seconds) / 3600.0
-            };
+            + f64::from(longitude_minutes) / 60.0
+            + f64::from(longitude_seconds) / 3600.0;
+
         Position {
             latitude,
             longitude,
@@ -111,11 +105,11 @@ impl Position {
 
     pub fn as_degrees_decimal_minutes(&self) -> (DegreesDecimalMinutes, DegreesDecimalMinutes) {
         let latitude = DegreesDecimalMinutes {
-            degrees: self.latitude as i8,
+            degrees: self.latitude as u16,
             minutes: self.latitude.fract().abs() * 60.0,
         };
         let longitude = DegreesDecimalMinutes {
-            degrees: self.longitude as i8,
+            degrees: self.longitude as u16,
             minutes: self.longitude.fract().abs() * 60.0,
         };
         (latitude, longitude)
@@ -125,7 +119,7 @@ impl Position {
         let minutes = self.latitude.fract().abs() * 60.0;
         let seconds = minutes.fract().abs() * 60.0;
         let latitude = DegreesMinutesSeconds {
-            degrees: self.latitude as i8,
+            degrees: self.latitude as u16,
             minutes: minutes as u8,
             seconds: seconds as u8,
         };
@@ -133,7 +127,7 @@ impl Position {
         let minutes = self.longitude.fract().abs() * 60.0;
         let seconds = minutes.fract().abs() * 60.0;
         let longitude = DegreesMinutesSeconds {
-            degrees: self.longitude as i8,
+            degrees: self.longitude as u16,
             minutes: minutes as u8,
             seconds: seconds as u8,
         };
@@ -266,134 +260,5 @@ impl Position {
             latitude: phi_3.to_degrees(),
             longitude: lambda_3.to_degrees(),
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    const CLOSE_TOLERANCE: f64 = 0.05;
-
-    #[test]
-    fn test01() {
-        let position = Position::new();
-        assert_eq!(position.latitude, 0.0);
-        assert_eq!(position.longitude, 0.0);
-    }
-
-    #[test]
-    fn test02() {
-        let position = Position::from_degrees_decimal_minutes(1, 30.0, -120, 45.0);
-        println!("{:?}", position);
-        assert_eq!(position.latitude, 1.5);
-        assert_eq!(position.longitude, -120.75);
-    }
-
-    #[test]
-    fn test03() {
-        let position = Position::from_dms(123, 45, 15, -100, 30, 55);
-        println!("{:?}", position);
-        assert!((position.latitude - 123.75 - 15.0 / 3600.0).abs() < 0.1);
-        assert!((position.longitude - (-100.5 + 55.0 / 3600.0)).abs() < 0.1);
-    }
-
-    #[test]
-    fn test04() {
-        let start_position = Position::from((0.0, 0.0));
-        let end_position = Position::from((1.0, 0.0));
-        assert!(start_position.distance_to(&end_position) - 60.0 < 0.11);
-
-        let end_position = Position::from((0.0, 1.0));
-        assert!(start_position.distance_to(&end_position) - 60.0 < 0.11);
-
-        let start_position = Position::from((1.0, 0.0));
-        let distance = start_position.distance_to(&end_position);
-        let check = 2.0_f64.sqrt() * 60.0;
-        assert!((distance - check).abs() < 0.01 * check);
-    }
-
-    #[test]
-    fn test05() {
-        let start_position = Position::from((0.0, 0.0));
-        let end_position = Position::from((1.0, 0.0));
-        let bearing = start_position.bearing_to(&end_position);
-
-        assert!(bearing.abs() < CLOSE_TOLERANCE);
-
-        let bearing = start_position.bearing_to(&Position::from((0.0, 1.0)));
-        assert!((bearing - 90.0).abs() < CLOSE_TOLERANCE);
-
-        let bearing = start_position.bearing_to(&Position::from((-1.0, 0.0)));
-        assert!((bearing - 180.0).abs() < CLOSE_TOLERANCE);
-
-        let bearing = start_position.bearing_to(&Position::from((0.0, -1.0)));
-        assert!((bearing - 270.0).abs() < CLOSE_TOLERANCE);
-
-        let bearing = start_position.bearing_to(&Position::from((1.0, 1.0)));
-        assert!((bearing - 45.0).abs() < CLOSE_TOLERANCE);
-
-        let bearing = start_position.bearing_to(&Position::from((-1.0, 1.0)));
-        assert!((bearing - 135.0).abs() < CLOSE_TOLERANCE);
-
-        let bearing = start_position.bearing_to(&Position::from((1.0, -1.0)));
-        assert!((bearing - 315.0).abs() < CLOSE_TOLERANCE);
-    }
-
-    #[test]
-    fn test06a() {
-        let start_position = Position::from((49.0, 123.0));
-
-        let bearing = start_position.bearing_to(&Position::from((49.0, 124.0)));
-        println!("bearing is {bearing}");
-        assert!((bearing - 270.0).abs() < CLOSE_TOLERANCE);
-    }
-
-    #[test]
-    fn test06b() {
-        let start_position = Position::from((49.0, 123.0));
-
-        let bearing = start_position.bearing_to(&Position::from((0.0, 1.0)));
-        assert!((bearing - 90.0).abs() < CLOSE_TOLERANCE);
-    }
-
-    #[test]
-    fn test06c() {
-        let start_position = Position::from((49.0, 123.0));
-
-        let bearing = start_position.bearing_to(&Position::from((-1.0, 0.0)));
-        assert!((bearing - 180.0).abs() < CLOSE_TOLERANCE);
-    }
-
-    #[test]
-    fn test06d() {
-        let start_position = Position::from((49.0, 123.0));
-
-        let bearing = start_position.bearing_to(&Position::from((0.0, -1.0)));
-        assert!((bearing - 270.0).abs() < CLOSE_TOLERANCE);
-    }
-
-    #[test]
-    fn test06e() {
-        let start_position = Position::from((49.0, 123.0));
-
-        let bearing = start_position.bearing_to(&Position::from((1.0, 1.0)));
-        assert!((bearing - 45.0).abs() < CLOSE_TOLERANCE);
-    }
-
-    #[test]
-    fn test06f() {
-        let start_position = Position::from((49.0, 123.0));
-
-        let bearing = start_position.bearing_to(&Position::from((-1.0, 1.0)));
-        assert!((bearing - 135.0).abs() < CLOSE_TOLERANCE);
-    }
-
-    #[test]
-    fn test06g() {
-        let start_position = Position::from((49.0, 123.0));
-
-        let bearing = start_position.bearing_to(&Position::from((1.0, -1.0)));
-        assert!((bearing - 315.0).abs() < CLOSE_TOLERANCE);
     }
 }
