@@ -41,7 +41,6 @@ impl From<(f32, f32)> for Position {
         }
     }
 }
-
 impl Position {
     pub fn new() -> Position {
         Position {
