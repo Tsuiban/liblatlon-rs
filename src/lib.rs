@@ -24,23 +24,15 @@ pub struct Position {
     pub longitude: f64,
 }
 
-impl From<(f64, f64)> for Position {
-    fn from(pair: (f64, f64)) -> Self {
-        Position {
-            latitude: pair.0,
-            longitude: pair.1,
-        }
-    }
-}
-
-impl From<(f32, f32)> for Position {
-    fn from(pair: (f32, f32)) -> Self {
+impl<T> From<(T, T)> for Position where f64: From<T> {
+    fn from(pair: (T, T)) -> Self {
         Position {
             latitude: f64::from(pair.0),
             longitude: f64::from(pair.1),
         }
     }
 }
+
 impl Position {
     pub fn new() -> Position {
         Position {
